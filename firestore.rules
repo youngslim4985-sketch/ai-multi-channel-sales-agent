@@ -39,7 +39,8 @@ service cloud.firestore {
              data.status in ["INITIAL", "QUALIFYING", "CONTACT_COLLECTION", "SCHEDULING", "FOLLOW_UP"] &&
              data.score in ["HOT", "WARM", "COLD"] &&
              data.source in ["WEB", "FB", "IG"] &&
-             data.createdAt is string;
+             data.createdAt is string &&
+             data.lastInteraction is string;
     }
 
     function isValidAppointment(data) {

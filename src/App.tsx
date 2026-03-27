@@ -202,18 +202,20 @@ export default function App() {
     e.preventDefault();
     if (!input.trim() || !selectedLead?.id || !user) return;
 
+    const leadId = selectedLead.id;
     const userMsg = input;
     setInput('');
     setIsTyping(true);
 
     try {
       // 1. Save user message
-      await addDoc(collection(db, 'leads', selectedLead.id, 'messages'), {
-        leadId: selectedLead.id,
+      const msgPath = `leads/${leadId}/messages`;
+      await addDoc(collection(db, msgPath), {
+        leadId: leadId,
         role: 'user',
         content: userMsg,
         timestamp: new Date().toISOString()
-      });
+      }).catch(err => handleFirestoreError(err, OperationType.CREATE, msgPath));
 
       // 2. Get AI response
       const history = messages.map(m => ({
@@ -225,39 +227,43 @@ export default function App() {
       const aiResponse = await getChatResponse(history, selectedLead);
 
       // 3. Save AI message
-      await addDoc(collection(db, 'leads', selectedLead.id, 'messages'), {
-        leadId: selectedLead.id,
+      await addDoc(collection(db, msgPath), {
+        leadId: leadId,
         role: 'model',
         content: aiResponse.message,
         timestamp: new Date().toISOString()
-      });
+      }).catch(err => handleFirestoreError(err, OperationType.CREATE, msgPath));
 
       // 4. Update lead state
-      const updatedLead = {
-        ...selectedLead,
+      const { id, ...leadData } = selectedLead;
+      const updatedLeadData = {
+        ...leadData,
         status: aiResponse.nextStage as SalesStage,
         score: aiResponse.score as LeadScore,
-        name: aiResponse.extractedData?.name || selectedLead.name,
-        email: aiResponse.extractedData?.email || selectedLead.email,
-        phone: aiResponse.extractedData?.phone || selectedLead.phone,
-        intent: aiResponse.extractedData?.intent || selectedLead.intent,
+        name: aiResponse.extractedData?.name || selectedLead.name || '',
+        email: aiResponse.extractedData?.email || selectedLead.email || '',
+        phone: aiResponse.extractedData?.phone || selectedLead.phone || '',
+        intent: aiResponse.extractedData?.intent || selectedLead.intent || '',
         lastInteraction: new Date().toISOString()
       };
       
-      await updateDoc(doc(db, 'leads', selectedLead.id), updatedLead);
-      setSelectedLead(updatedLead);
+      await updateDoc(doc(db, 'leads', leadId), updatedLeadData)
+        .catch(err => handleFirestoreError(err, OperationType.UPDATE, `leads/${leadId}`));
+      
+      setSelectedLead({ id: leadId, ...updatedLeadData });
 
       // 5. Handle Booking if stage is FOLLOW_UP and not already booked
       if (aiResponse.nextStage === 'FOLLOW_UP') {
-        const alreadyBooked = appointments.some(a => a.leadId === selectedLead.id);
+        const alreadyBooked = appointments.some(a => a.leadId === leadId);
         if (!alreadyBooked) {
-          await addDoc(collection(db, 'appointments'), {
+          const apptPath = 'appointments';
+          await addDoc(collection(db, apptPath), {
             uid: user.uid,
-            leadId: selectedLead.id,
+            leadId: leadId,
             scheduledAt: new Date(Date.now() + 86400000).toISOString(), // Mock: 24h from now
             type: 'Solar Consultation',
             createdAt: new Date().toISOString()
-          });
+          }).catch(err => handleFirestoreError(err, OperationType.CREATE, apptPath));
         }
       }
 
