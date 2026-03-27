@@ -1,0 +1,62 @@
+{
+  "entities": {
+    "Lead": {
+      "title": "Lead",
+      "description": "A potential customer captured through AI chat.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Owner UID" },
+        "name": { "type": "string", "description": "Lead's name" },
+        "email": { "type": "string", "format": "email", "description": "Lead's email" },
+        "phone": { "type": "string", "description": "Lead's phone number" },
+        "status": { "type": "string", "enum": ["INITIAL", "QUALIFYING", "CONTACT_COLLECTION", "SCHEDULING", "FOLLOW_UP"], "description": "Current sales stage" },
+        "score": { "type": "string", "enum": ["HOT", "WARM", "COLD"], "description": "Lead priority ranking" },
+        "source": { "type": "string", "enum": ["WEB", "FB", "IG"], "description": "Lead intake channel" },
+        "intent": { "type": "string", "description": "Lead's primary intent or goal" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of capture" },
+        "lastInteraction": { "type": "string", "format": "date-time", "description": "Last message timestamp" }
+      },
+      "required": ["uid", "status", "score", "source", "createdAt"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "A booked sales call.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Owner UID" },
+        "leadId": { "type": "string", "description": "Reference to the Lead" },
+        "scheduledAt": { "type": "string", "format": "date-time", "description": "Appointment time" },
+        "type": { "type": "string", "description": "Type of call (e.g., Solar Consultation)" },
+        "notes": { "type": "string", "description": "Additional context for the call" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of booking" }
+      },
+      "required": ["uid", "leadId", "scheduledAt", "createdAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A single message in a conversation thread.",
+      "type": "object",
+      "properties": {
+        "leadId": { "type": "string", "description": "Reference to the Lead" },
+        "role": { "type": "string", "enum": ["user", "model"], "description": "Who sent the message" },
+        "content": { "type": "string", "description": "Message text" },
+        "timestamp": { "type": "string", "format": "date-time", "description": "When it was sent" }
+      },
+      "required": ["leadId", "role", "content", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/leads/{leadId}": {
+      "schema": "Lead",
+      "description": "Collection of leads"
+    },
+    "/appointments/{appointmentId}": {
+      "schema": "Appointment",
+      "description": "Collection of booked appointments"
+    },
+    "/leads/{leadId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Conversation history for a lead"
+    }
+  }
+}

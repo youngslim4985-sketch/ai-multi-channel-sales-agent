@@ -1,0 +1,9 @@
+{
+  "name": "T&F Automate - AI Sales Agent",
+  "description": "Multi-channel AI sales platform for lead qualification, CRM logging, and appointment booking. Features stateful AI conversations, lead scoring, and analytics.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
